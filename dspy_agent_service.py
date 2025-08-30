@@ -26,7 +26,6 @@ class DspyAgentService:
         internal_tool = InternalKnowledgeTool(self.grounding_manager)
         web_search_tool = WebSearchToolTavily(
             self.grounding_manager,
-            include_domains=["google.com"],
             top_k=10,
             include_raw_content=True,
         )

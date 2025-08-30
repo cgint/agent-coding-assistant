@@ -11,6 +11,8 @@ from dspy_agent_lm_vertexai import get_vertexai_lm
 from dspy_agent_util_streaming_grounding_manager import StreamingGroundingManager
 from dspy_agent_tool_streaming_internal_knowledge import StreamingInternalKnowledgeTool
 from dspy_agent_tool_streaming_websearch_tavily import StreamingWebSearchToolTavily
+from dspy_agent_tool_lc_filesystem import LangChainReadFileTool, LangChainListDirectoryTool
+from dspy_agent_tool_restricted_shell import RestrictedShellTool
 from dspy_agent_expert_ai import AgentCodingAssistantAI
 from dspy_constants import MODEL_NAME_GEMINI_2_5_FLASH, MODEL_NAME_GEMINI_2_5_PRO, MODEL_NAME_GEMINI_2_5_FLASH_LITE, MODEL_NAME_GEMINI_2_0_FLASH
 from session_history_manager import SessionHistoryManager
@@ -46,10 +48,31 @@ class StreamingDspyAgentService:
         )
         web_search_tool = StreamingWebSearchToolTavily(
             grounding_manager=self.grounding_manager,
-            include_domains=["google.com"],
             top_k=10,
             include_raw_content=True,
         )
+        
+        # Create filesystem tools for coding capabilities
+        read_file_tool = LangChainReadFileTool(
+            grounding_manager=self.grounding_manager,
+        )
+        list_directory_tool = LangChainListDirectoryTool(
+            grounding_manager=self.grounding_manager,
+        )
+        
+        # Create restricted shell tool for command execution
+        shell_tool = RestrictedShellTool(
+            grounding_manager=self.grounding_manager,
+        )
+        
+        # Build list of tools for easy iteration
+        tools: list[dspy.Tool] = [
+            internal_tool,
+            web_search_tool,
+            read_file_tool,
+            list_directory_tool,
+            shell_tool
+        ]
 
         # Attach per-request DSPy callbacks to tools to emit progress via DSPy's native hook system
         if self.threadsafe_event_callback or self.event_callback:
@@ -58,22 +81,23 @@ class StreamingDspyAgentService:
                 threadsafe_event_callback=self.threadsafe_event_callback,
                 tool_calls=self._tool_calls,
             )
+            
             # Instance-level callbacks are honored by DSPy in addition to global callbacks
             try:
-                internal_tool.callbacks = getattr(internal_tool, "callbacks", []) + [tool_callback]  # type: ignore[attr-defined]
-                web_search_tool.callbacks = getattr(web_search_tool, "callbacks", []) + [tool_callback]  # type: ignore[attr-defined]
+                for tool in tools:
+                    tool.callbacks = getattr(tool, "callbacks", []) + [tool_callback]  # type: ignore[attr-defined]
             except Exception:
                 # If attaching callbacks fails for any reason, continue without breaking
                 pass
 
         # Initialize the main agent with streaming tools
-        self.expert_ai = AgentCodingAssistantAI(tools=[internal_tool, web_search_tool])
+        self.expert_ai = AgentCodingAssistantAI(tools=tools)
         
         # Create streamified version of the agent for answer streaming
         self.streaming_expert_ai = dspy.streamify(
             self.expert_ai,
             stream_listeners=[
-                dspy.streaming.StreamListener(signature_field_name="answer")  # type: ignore[attr-defined]
+                dspy.streaming.StreamListener(signature_field_name="answer")
             ]
         )
 
@@ -81,7 +105,7 @@ class StreamingDspyAgentService:
         # This avoids AttributeError in call sites even if class-level definitions drift.
         if not hasattr(self, "stream_answer") or not callable(getattr(self, "stream_answer", None)):
             # Bind the implementation as an instance attribute
-            self.stream_answer = self._stream_answer_impl  # type: ignore[assignment]
+            self.stream_answer = self._stream_answer_impl
     
     def set_session_id(self, session_id: str) -> None:
         """Set or update the logical session identifier used for persistence."""
@@ -110,14 +134,14 @@ class StreamingDspyAgentService:
                         self._merge_usage_entries(current, v)
                     elif isinstance(v, (int, float)) or v is None:
                         try:
-                            result[k] = (current or 0) + (v or 0)  # type: ignore[operator]
+                            result[k] = (current or 0) + (v or 0)
                         except TypeError:
                             result[k] = v or 0
                     else:
                         result[k] = v
                 return result
 
-            _ut.UsageTracker._merge_usage_entries = _safe_merge_usage_entries  # type: ignore[assignment]
+            _ut.UsageTracker._merge_usage_entries = _safe_merge_usage_entries
             dspy.configure_cache(
                 enable_disk_cache=False, enable_memory_cache=False, enable_litellm_cache=False
             )
@@ -154,8 +178,8 @@ class StreamingDspyAgentService:
         })
 
         try:
-            async for chunk in self.streaming_expert_ai(question=question, history=history):  # type: ignore[misc]
-                if isinstance(chunk, dspy.streaming.StreamResponse):  # type: ignore[attr-defined]
+            async for chunk in self.streaming_expert_ai(question=question, history=history):
+                if isinstance(chunk, dspy.streaming.StreamResponse):
                     chunk_data = {"chunk": chunk.chunk, "timestamp": self._get_timestamp()}
                     await self._emit_event("answer_chunk", chunk_data)
                     yield {"type": "answer_chunk", "data": chunk_data}

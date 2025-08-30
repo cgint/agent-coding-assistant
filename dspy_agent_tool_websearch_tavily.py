@@ -21,10 +21,11 @@ class WebSearchTavilyModule(dspy.Module):
         self.classifier_credentials_passwords = ClassifierCredentialsPasswords()
         self.extractor = dspy.Predict(WebSearchTavilySignature)
     
-    def forward(self, query: str) -> str:
+    def forward(self, query: str) -> dspy.Prediction:
         query_classification = self.classifier_credentials_passwords(classify_input=query).classification
         if query_classification != "safe":
-            return f"I'm sorry, I can't answer that question because it contains exposed credentials or passwords. Classification: {query_classification}"
+            print(f"WebSearchTavilyModule: Query contains exposed credentials or passwords. Classification: {query_classification}.\nQuery: {query}")
+            return dspy.Prediction(answer=f"I'm sorry, I can't answer that question because it contains exposed credentials or passwords. Classification: {query_classification}")
         
         results: TavilySearchRMResultList = self.retriever_tavily.forward(query, include_domains=self.include_domains)
         for result in results.results:

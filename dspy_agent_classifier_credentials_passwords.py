@@ -36,9 +36,8 @@ if not os.getenv("VERTEXAI_PROJECT") or not os.getenv("VERTEXAI_LOCATION"):
 classifier_lm_model_name = MODEL_NAME_GEMINI_2_5_FLASH_LITE
 classifier_lm_reasoning_effort = "disable"
 classifier_lm = dspy.LM(
-    model='ollama/gemma3:270m',
-    # model=f'vertex_ai/{classifier_lm_model_name}',
-    # reasoning_effort=classifier_lm_reasoning_effort # other options are Literal["low", "medium", "high"]
+    model=f'vertex_ai/{classifier_lm_model_name}',
+    reasoning_effort=classifier_lm_reasoning_effort # other options are Literal["low", "medium", "high"]
     # thinking={"type": "enabled", "budget_tokens": 512}
 )
 

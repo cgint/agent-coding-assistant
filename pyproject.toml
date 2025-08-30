@@ -14,7 +14,9 @@ dependencies = [
     "uvicorn[standard]>=0.20.0",
     "python-socketio>=5.8.0",
     "python-multipart>=0.0.6",
-    "psutil>=5.9.0"
+    "psutil>=5.9.0",
+    "mcp[cli]>=1.13.1",
+    "langchain-community>=0.3.29",
 ]
 
 [dependency-groups]

@@ -8,6 +8,7 @@ let numRequestsInProgress = 0;
 let querySendInProgress = false;
 let chatFetchInProgress = false;
 let toolUseFetchInProgress = false;
+let messageInput = null; // Declare messageInput globally
 const marked = new showdown.Converter({ simplifiedAutoLink: true, tables: true, strikethrough: true });
 
 // Socket.IO connection
@@ -185,7 +186,6 @@ function initializeWebSocket() {
     if (DEBUG) console.log('Answer chunk received');
     // If this is the first chunk, render the user message (if pending) and start streaming container
     if (!currentStreamingMessage) {
-      const messageInput = document.querySelector('.chat-input-area .form-control');
       const lastUserMessage = messageInput && messageInput.dataset ? (messageInput.dataset.lastQuestion || '') : '';
       if (lastUserMessage) {
         renderUserMessage(lastUserMessage);
@@ -209,7 +209,6 @@ function initializeWebSocket() {
     if (currentStreamingMessage) {
       finalizeStreamingMessage(data.answer, null, data.usage_metadata || null);
     } else {
-      const messageInput = document.querySelector('.chat-input-area .form-control');
       const lastUserMessage = messageInput && messageInput.dataset ? (messageInput.dataset.lastQuestion || '') : '';
       if (lastUserMessage) {
         renderUserMessage(lastUserMessage);
@@ -299,7 +298,7 @@ function displaySessionHistory(history) {
   if (!history || history.length === 0) {
     if (DEBUG) console.log('No session history to display, showing welcome message');
     // Show welcome message if no history
-    renderBotMessage('Hi! I\'m your Agent Coding Assistant.\n\nI can help you with:\n- Campaign setup and optimization\n- Bidding strategies and performance analysis\n- Google Ads best practices and recommendations\n- Troubleshooting campaign issues\n\nAsk me anything about Google Ads!');
+    renderBotMessage('Hi! I\'m your Agent Coding Assistant.\n\nI can help you with:\n- Campaign setup and optimization\n- Bidding strategies and performance analysis\n- Google Ads best practices and recommendations\n- Troubleshooting campaign issues\n\nWhat are we gonna build today?');
     return;
   }
   
@@ -651,7 +650,7 @@ function getSessionIdFromUrlOrStore() {
   let storedId = localStorage.getItem('sessionId');
   if (!storedId) {
     // Generate a default ID if none exists
-    storedId = 'google_ads_' + Date.now();
+    storedId = 'coding_assistant_' + Date.now();
     addOrUpdateSessionInHistory(storedId);
     localStorage.setItem('sessionId', storedId);
         
@@ -702,7 +701,6 @@ function processAutoQuery() {
     const decodedQuery = decodeURIComponent(queryParam);
     
     // Get the input field
-    const messageInput = document.querySelector('.chat-input-area .form-control');
     if (!messageInput) {
       console.error('Chat input field not found for auto-query');
       return;
@@ -1324,14 +1322,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   
   // Setup chat functionality
-  const chatInput = document.querySelector('.chat-input-area .form-control');
+  messageInput = document.querySelector('.chat-input-area .form-control');
   const sendButton = document.querySelector('.chat-input-area .btn');
     
   // Initialize textarea auto-resize
-  autoResizeTextarea(chatInput);
+  autoResizeTextarea(messageInput);
   
   // Add input event for auto-resizing textarea as user types
-  chatInput.addEventListener('input', function() {
+  messageInput.addEventListener('input', function() {
     autoResizeTextarea(this);
   });
   
@@ -1339,7 +1337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   sendButton.addEventListener('click', sendQuery);
   
   // Updated keypress handler to handle Shift+Enter
-  chatInput.addEventListener('keydown', (e) => {
+  messageInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       if (e.shiftKey) {
         // Allow new line with Shift+Enter
