@@ -3,8 +3,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
-from typing import Optional, Tuple, Any
+from typing import Tuple, Any
 import uvicorn
 import os
 import glob
@@ -12,8 +11,6 @@ import glob
 from api.websocket_manager import AgentWebSocketManager
 from api.routes import health, agent
 from dspy_agent_streaming_service import StreamingDspyAgentService
-import json
-from dspy_constants import MODEL_NAME_GEMINI_2_5_FLASH
 
 import mlflow
 mlflow.set_experiment("dspy_agent_coding_assistant_api_main")
@@ -69,19 +66,6 @@ def get_atlassian_auth(request: Request) -> Tuple[str, str, str]:
         token = os.environ.get('ATTL_KEY', '')
         return (email, token, f"from-env ({bool(atlassian_email)}, {bool(atlassian_token)})")
 
-# --- Pydantic Models ---
-class ChatRequest(BaseModel):
-    query: str
-    session_id: str
-    model_category: Optional[str] = "medium"
-
-class ChatResponse(BaseModel):
-    answer: str
-    session_id: str
-    model: Optional[str] = None
-    token_count: Optional[dict[str, Any]] = None
-
-
 # Add Gzip middleware
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
@@ -111,39 +95,6 @@ async def ping(request: Request) -> dict[str, str]:
     """Health check endpoint that logs headers."""
     print(" | ".join([f"{k}: {v}" for k, v in request.headers.items()]))
     return {"status": "PONG"}
-
-@app.post("/chat/ask", response_model=ChatResponse)
-async def chat_endpoint(chat_request: ChatRequest, request: Request) -> ChatResponse:
-    """Main chat endpoint (renamed from /chat/react to /chat/ask)."""
-    try:
-        # Get authentication info (for future use)
-        # atlassian_email, atlassian_token, source = get_atlassian_auth(request)
-        
-        # Create streaming service for this request
-        service = StreamingDspyAgentService()
-        
-        # Process the request
-        final_answer, usage_metadata_str = await service.answer_one_question_async(
-            chat_request.query
-        )
-        
-        # Parse usage metadata
-        usage_metadata = json.loads(usage_metadata_str) if usage_metadata_str else {}
-        
-        return ChatResponse(
-            answer=final_answer,
-            session_id=chat_request.session_id,
-            model=usage_metadata.get('model', MODEL_NAME_GEMINI_2_5_FLASH),
-            token_count=usage_metadata
-        )
-        
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return ChatResponse(
-            answer=f"Error in process_chat_request: {e}", 
-            session_id=chat_request.session_id
-        )
 
 # --- Combined JS/CSS Endpoints (matching original pattern) ---
 @app.get("/js/app.js")
