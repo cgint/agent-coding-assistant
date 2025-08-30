@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infographic: Building a Google Ads Expert AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Brilliant Blues -->
+    <!-- Application Structure Plan: A single-page, scroll-based narrative. The flow guides the user from the high-level problem ('The Challenge') to the proposed solution ('The Solution'), its detailed components ('Interactive Architecture'), the key benefits ('Unlocking Value'), and the supporting technologies ('Technology Stack'). This linear, storytelling structure is chosen for its clarity and ability to build a persuasive case, making a complex technical proposal digestible for a broad audience. User interaction is focused on the architecture diagram to allow deep-dives without overwhelming the main narrative. -->
+    <!-- Visualization & Content Choices: 
+    - The Challenge (Pain Points): Goal: Inform. Method: Styled cards with Unicode icons. Justification: Quickly communicates the core problems CSMs face. NO SVG/Mermaid.
+    - Key Information Sources: Goal: Compare/Organize. Method: Donut Chart (Chart.js). Justification: Shows the composition of information sources (e.g., how much is structured vs. unstructured "in our head" knowledge), highlighting the need for a unified system. NO SVG/Mermaid.
+    - Architecture Diagram: Goal: Organize/Explain. Method: Interactive flowchart with HTML/CSS & JS. Interaction: Hovering over nodes reveals details about each agent and its tools. Justification: Makes the complex multi-agent system understandable and engaging, far more effective than a static diagram. NO SVG/Mermaid.
+    - Core Benefits: Goal: Inform. Method: A horizontal bar chart (Chart.js). Justification: Visually compares and quantifies the expected impact (e.g., 'Time Savings', 'Accuracy Boost'), making the value proposition clear and memorable. NO SVG/Mermaid. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f9ff; /* sky-50 */
+            color: #0c4a6e; /* sky-900 */
+        }
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-size: 2.25rem;
+            line-height: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+        }
+        .section-header p {
+            margin-top: 1rem;
+            max-width: 42rem;
+            margin-left: auto;
+            margin-right: auto;
+            font-size: 1.125rem;
+            line-height: 1.75rem;
+            color: #075985; /* sky-800 */
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; 
+            max-height: 400px;
+        }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        .diagram-node {
+            position: relative;
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+        }
+        .diagram-node:hover .detail-card {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+        .detail-card {
+            opacity: 0;
+            visibility: hidden;
+            position: absolute;
+            background-color: white;
+            border: 1px solid #e0f2fe; /* sky-100 */
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+            width: 280px;
+            z-index: 10;
+            transform: translateY(10px) scale(0.95);
+            transition: all 0.2s ease-out;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
+
+        <section id="introduction" class="mb-24">
+            <div class="text-center">
+                <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-sky-900">
+                    Empowering Customer Success Managers
+                </h1>
+                <p class="mt-4 text-lg md:text-xl text-sky-700 max-w-3xl mx-auto">
+                    An interactive overview of our proposal to build a transformative Google Ads Expert AI using Google's Agent Development Kit (ADK).
+                </p>
+            </div>
+        </section>
+
+        <section id="challenge" class="mb-24">
+            <div class="section-header">
+                <h2>The Challenge: A Fragmented Workflow</h2>
+                <p>Our CSMs are experts, but their knowledge retrieval process is manual and disconnected. They pull from various sources, leading to inefficiencies and lost opportunities to scale expertise.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="card p-6 text-center">
+                    <div class="text-5xl mb-4">🧠</div>
+                    <h3 class="font-bold text-lg">Tacit Knowledge</h3>
+                    <p class="text-sky-800 mt-2 text-sm">Vital experience from individual CSMs remains siloed and hard to transfer.</p>
+                </div>
+                <div class="card p-6 text-center">
+                    <div class="text-5xl mb-4">📚</div>
+                    <h3 class="font-bold text-lg">Internal Docs</h3>
+                    <p class="text-sky-800 mt-2 text-sm">Key strategies are buried in Confluence, slide decks, and disparate templates.</p>
+                </div>
+                <div class="card p-6 text-center">
+                    <div class="text-5xl mb-4">📈</div>
+                    <h3 class="font-bold text-lg">Live Platforms</h3>
+                    <p class="text-sky-800 mt-2 text-sm">Constant, manual checks of the Google Ads UI are required for real-time data.</p>
+                </div>
+                <div class="card p-6 text-center">
+                    <div class="text-5xl mb-4">🌐</div>
+                    <h3 class="font-bold text-lg">Public Sources</h3>
+                    <p class="text-sky-800 mt-2 text-sm">Google Help pages and Trends provide general advice but lack client-specific context.</p>
+                </div>
+            </div>
+            <div class="mt-16 card p-8 flex flex-col md:flex-row items-center gap-8">
+                <div class="w-full md:w-1/2">
+                    <h3 class="text-2xl font-bold text-sky-900">Visualizing the Information Silos</h3>
+                    <p class="mt-2 text-sky-800">A significant portion of critical knowledge is unstructured or requires manual data pulls. Our proposed AI aims to unify these sources, making tacit and hard-to-reach information instantly accessible and actionable.</p>
+                </div>
+                <div class="w-full md:w-1/2">
+                    <div class="chart-container h-64 md:h-80"><canvas id="sourcesChart"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="architecture" class="mb-24">
+            <div class="section-header">
+                <h2>Interactive Architecture: A Multi-Agent System</h2>
+                <p>Our solution, built with Google ADK, employs a Coordinator Agent that delegates tasks to specialized sub-agents. Hover over any component to explore its role and the Google Cloud services it leverages.</p>
+            </div>
+            
+            <div class="p-8 bg-white rounded-xl shadow-lg">
+                <div class="flex flex-col items-center space-y-4 md:space-y-6 relative">
+                    <div class="diagram-node bg-sky-100 border-2 border-sky-300 p-4 rounded-full shadow-md text-center w-48">
+                        <p class="font-bold">CSM Query</p>
+                    </div>
+                    
+                    <div class="w-px h-8 bg-sky-300"></div>
+
+                    <div id="coordinator-node" class="diagram-node bg-sky-800 text-white p-5 rounded-xl shadow-xl text-center z-10">
+                         <p class="font-bold text-lg">GoogleAdsCSMExpert</p>
+                         <p class="text-sm opacity-80">(ADK Coordinator Agent)</p>
+                         <div class="detail-card left-1/2 -translate-x-1/2 top-full mt-2">
+                           <p class="font-semibold">Coordinator Agent</p>
+                           <p class="text-sm text-slate-600 mt-1">Interprets CSM queries, orchestrates sub-agents, and synthesizes all retrieved information into a final, actionable answer.</p>
+                       </div>
+                    </div>
+
+                    <div class="absolute top-48 w-full h-px bg-sky-300 hidden md:block"></div>
+                    <div class="absolute top-48 left-1/2 w-px h-16 bg-sky-300 hidden md:block"></div>
+                    
+                    <div class="w-full flex flex-col md:flex-row justify-around items-center md:items-start gap-8 md:gap-0 pt-12 md:pt-16">
+                        <div id="api-agent-node" class="diagram-node bg-white border-2 border-blue-400 p-4 rounded-lg shadow-md w-60 text-center">
+                            <p class="font-semibold">GoogleAdsAPIAgent</p>
+                            <p class="text-xs text-slate-500 mt-1">Handles live data</p>
+                             <div class="detail-card -left-8 bottom-full mb-2">
+                                <p class="font-semibold text-blue-800">API Agent</p>
+                                <p class="text-sm text-slate-600 mt-1">Connects to the <strong class="font-bold">Google Ads API</strong> for real-time campaign performance, settings, and recommendations. Ensures advice is based on live data.</p>
+                           </div>
+                        </div>
+                        <div id="internal-agent-node" class="diagram-node bg-white border-2 border-amber-400 p-4 rounded-lg shadow-md w-60 text-center">
+                            <p class="font-semibold">InternalKnowledgeAgent</p>
+                            <p class="text-xs text-slate-500 mt-1">Accesses internal wisdom</p>
+                            <div class="detail-card left-1/2 -translate-x-1/2 bottom-full mb-2">
+                                <p class="font-semibold text-amber-800">Internal Knowledge Agent</p>
+                                <p class="text-sm text-slate-600 mt-1">Queries <strong class="font-bold">Confluence</strong> and an internal database (e.g., <strong class="font-bold">BigQuery</strong>) using RAG powered by <strong class="font-bold">Vertex AI Vector Search</strong>. Unlocks your team's collective experience.</p>
+                           </div>
+                        </div>
+                        <div id="public-agent-node" class="diagram-node bg-white border-2 border-green-400 p-4 rounded-lg shadow-md w-60 text-center">
+                             <p class="font-semibold">GooglePublicDocsAgent</p>
+                             <p class="text-xs text-slate-500 mt-1">Finds public info & trends</p>
+                             <div class="detail-card -right-8 bottom-full mb-2">
+                                <p class="font-semibold text-green-800">Public Docs Agent</p>
+                                <p class="text-sm text-slate-600 mt-1">Uses <strong class="font-bold">Google Search</strong> and <strong class="font-bold">Trends API</strong> to fetch the latest official documentation, best practices, and market insights, ensuring recency and authority.</p>
+                           </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="benefits">
+            <div class="section-header">
+                <h2>Unlocking Value & Driving Results</h2>
+                <p>By unifying knowledge and automating analysis, the AI assistant will deliver measurable improvements in CSM efficiency, solution quality, and ultimately, client success.</p>
+            </div>
+            <div class="card p-8">
+                 <h3 class="text-2xl font-bold text-sky-900 text-center mb-6">Projected Impact on CSM Operations</h3>
+                 <div class="chart-container h-96"><canvas id="benefitsChart"></canvas></div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const wrapLabel = (label, maxLength) => {
+                if (label.length <= maxLength) return label;
+                const words = label.split(' ');
+                const lines = [];
+                let currentLine = '';
+                for (const word of words) {
+                    if ((currentLine + ' ' + word).trim().length > maxLength) {
+                        lines.push(currentLine);
+                        currentLine = word;
+                    } else {
+                        currentLine = (currentLine + ' ' + word).trim();
+                    }
+                }
+                if (currentLine) lines.push(currentLine);
+                return lines;
+            };
+
+            const tooltipTitleCallback = (tooltipItems) => {
+                const item = tooltipItems[0];
+                let label = item.chart.data.labels[item.dataIndex];
+                if (Array.isArray(label)) {
+                    return label.join(' ');
+                } else {
+                    return label;
+                }
+            };
+            
+            const sourcesChartCtx = document.getElementById('sourcesChart').getContext('2d');
+            new Chart(sourcesChartCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Tacit Knowledge (Experience)', 'Internal Docs (Confluence, etc)', 'Live Platform Data', 'Public Sources (Google Help)'],
+                    datasets: [{
+                        label: 'Effort to Access Information',
+                        data: [40, 25, 20, 15],
+                        backgroundColor: [
+                            '#38bdf8', // sky-400
+                            '#fbbf24', // amber-400
+                            '#60a5fa', // blue-400
+                            '#4ade80'  // green-400
+                        ],
+                        borderColor: '#f0f9ff',
+                        borderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                             labels: { color: '#0c4a6e' }
+                        },
+                        title: {
+                            display: false,
+                        },
+                        tooltip: {
+                            callbacks: { title: tooltipTitleCallback }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            const benefitsChartCtx = document.getElementById('benefitsChart').getContext('2d');
+            const benefitsLabels = [
+                wrapLabel('Time Saved on Manual Research', 16),
+                wrapLabel('Increased Accuracy of Recommendations', 16),
+                wrapLabel('Faster Onboarding for New CSMs', 16),
+                wrapLabel('Improved Client Retention Rate', 16)
+            ];
+            new Chart(benefitsChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: benefitsLabels,
+                    datasets: [{
+                        label: 'Projected Improvement (%)',
+                        data: [75, 60, 50, 20],
+                        backgroundColor: '#38bdf8', // sky-400
+                        borderColor: '#0284c7', // sky-600
+                        borderWidth: 2,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { color: '#e0f2fe' },
+                            ticks: { 
+                                color: '#075985',
+                                callback: function(value) { return value + '%' }
+                            }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#075985' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: tooltipTitleCallback,
+                                label: function(context) {
+                                    return ` ${context.dataset.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
+

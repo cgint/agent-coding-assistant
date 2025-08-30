@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agent Coding Assistant</title>
+    <link rel="icon" href="/static/favicon_google-ads.webp" />
+    <!-- Include self-hosted Bootstrap CSS -->
+    <link rel="stylesheet" href="/static/external/bootstrap-5.3.6-dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/external/bootstrap-icons-1.13.1/bootstrap-icons.css">
+    <style>
+        /* Override Bootstrap code color */
+        :root {
+            --bs-code-color: #ff4081;
+        }
+        /* Minimal custom CSS for layout and dark mode */
+        body {
+            padding: 0;
+            margin: 0;
+            overflow: hidden; /* Prevent scrolling on the body */
+            height: 100vh; /* Full viewport height */
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s ease;
+        }
+        .container-fluid {
+            flex-grow: 1; /* Allow container to take up remaining space */
+            overflow-y: hidden; /* Prevent vertical scrolling on the container */
+            padding: 0; /* Remove default container padding */
+        }
+        .row {
+             height: 100%; /* Make the row take full height of the container */
+             margin: 0; /* Remove default row margin */
+        }
+        .chat-area, .settings-sidebar {
+            height: 100%; /* Make columns take full height of the row */
+            display: flex;
+            flex-direction: column;
+            padding: 15px; /* Add some padding inside the columns */
+        }
+        .settings-sidebar {
+            background-color: #e8f4f8;
+            transition: width 0.3s ease, flex 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+        }
+        .chat-area {
+            /* background-color: #b7b7b7; */
+            border-right: 1px solid #dee2e6;
+            transition: width 0.3s ease, flex 0.3s ease;
+        }
+        .chat-header, .settings-header {
+            flex-shrink: 0; /* Prevent headers from shrinking */
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .chat-messages {
+            flex-grow: 1; /* Allow messages area to take up remaining space */
+            overflow-y: auto; /* Enable scrolling for chat messages */
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+            padding: 10px;
+        }
+        .chat-input-area {
+            flex-shrink: 0; /* Prevent input area from shrinking */
+            display: flex;
+            gap: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #dee2e6;
+        }
+        .chat-input-area .form-control {
+            border-radius: 20px;
+            padding-left: 15px;
+            padding-right: 15px;
+            max-height: 100px;
+            overflow-y: auto;
+            resize: none;
+        }
+        .chat-input-area .btn {
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-self: flex-end;
+        }
+        .settings-section {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .settings-section h5 {
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .settings-section:last-child {
+            border-bottom: none;
+        }
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .form-check-input {
+            width: 40px;
+            height: 20px;
+        }
+        .form-switch .form-check-input {
+            margin-left: 10px;
+        }
+
+        /* Chat message styling */
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 15px;
+            border-radius: 15px;
+            max-width: 95%;
+            /* word-wrap: break-word;
+            word-break: break-all; */
+            /* position: relative; */
+        }
+        .bot-message {
+            background-color: #d1ecf1;
+            align-self: flex-start;
+            margin-right: auto; /* Align to the left */
+            border-bottom-left-radius: 5px;
+        }
+        .user-message {
+            background-color: rgb(66, 165, 245);
+            color: white;
+            align-self: flex-end;
+            margin-left: auto; /* Align to the right */
+            border-bottom-right-radius: 5px;
+            /* max-height: 200px; */
+            overflow-y: auto;
+        }
+        .message p {
+            margin: 0;
+        }
+        .message small {
+            display: block;
+            font-size: 0.7em;
+            color: #888;
+            margin-top: 5px;
+        }
+        .message .model-info {
+            display: inline-block;
+            font-size: 0.65em;
+            margin-right: 5px;
+            color: #6c757d;
+            background-color: rgba(220, 220, 220, 0.5);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+        .message .token-info {
+            display: inline-block;
+            font-size: 0.65em;
+            color: #6c757d;
+            background-color: rgba(220, 220, 220, 0.5);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+        .message .time-info {
+            float: right;
+        }
+        .message .metadata-info {
+            float: left;
+        }
+        .message .metadata-info:empty {
+            display: none;
+        }
+        .message .metadata-info:not(:empty) {
+            margin-right: 5px;
+        }
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+        .dark-mode .message .model-info,
+        .dark-mode .message .token-info {
+            color: #bbb;
+            background-color: rgba(80, 80, 80, 0.5);
+        }
+        .chat-avatar {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-bottom: 5px;
+            border-radius: 50%;
+        }
+        .bot-avatar {
+            background-color: #42a5f5;
+            color: white;
+            border: 1px solid #1976d2;
+        }
+        .user-avatar {
+            background-color: #6c757d;
+            color: white;
+        }
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+        .avatar-and-message {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        .user-message-wrapper {
+            align-items: flex-end;
+        }
+        .user-message small {
+            color: rgba(255, 255, 255, 0.8);
+            text-align: right;
+        }
+
+        /* Clear button styling */
+        .btn-clear-history {
+            margin-top: auto;
+            border-radius: 5px;
+        }
+
+        /* Cost indicator styles */
+        .cost-indicator {
+            font-size: 0.8em;
+            padding: 3px 7px;
+            border-radius: 12px;
+            background-color: rgba(66, 165, 245, 0.1);
+            color: rgb(66, 165, 245);
+            border: 1px solid rgba(66, 165, 245, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-right: 25px;
+        }
+        
+        .cost-indicator i {
+            font-size: 0.9em;
+        }
+        
+        .dark-mode .cost-indicator {
+            background-color: rgba(66, 165, 245, 0.2);
+            border-color: rgba(66, 165, 245, 0.3);
+            color: rgba(100, 181, 246, 0.9);
+        }
+
+        /* Dark mode styles */
+        .dark-mode {
+            background-color: #1e1e1e;
+            color: #e9e9e9;
+        }
+        .dark-mode a {
+            color: rgb(100, 181, 246);
+        }
+        .dark-mode code {
+            color: #ff86c3;
+        }
+        .dark-mode .chat-area {
+            border-right-color: #444;
+        }
+        .dark-mode .chat-header,
+        .dark-mode .settings-header,
+        .dark-mode .settings-section,
+        .dark-mode .chat-input-area {
+            border-color: #444;
+        }
+        .dark-mode .settings-sidebar {
+            background-color: #2d2d30;
+        }
+        .dark-mode .bot-message {
+            background-color: #3a3a3a;
+            color: #e9e9e9;
+        }
+        .dark-mode .form-control::placeholder {
+            color: #666;
+        }
+        .dark-mode .form-control {
+            background-color: #333;
+            border-color: #444;
+            color: #e9e9e9;
+        }
+        .dark-mode .form-check-input {
+            background-color: #444;
+            border-color: #555;
+        }
+        .dark-mode .form-check-input:checked {
+            background-color: #42a5f5;
+            border-color: #42a5f5;
+        }
+        .dark-mode .bot-avatar {
+            background-color: #42a5f5;
+            border-color: #1976d2;
+            color: white;
+        }
+        .dark-mode .bot-message small {
+            color: #aaa;
+        }
+        
+        /* Helper text dark mode styling */
+        .dark-mode .text-muted {
+            color: #aaa !important;
+        }
+        
+        /* Danger text styling */
+        .text-danger {
+            color: #dc3545 !important;
+        }
+        
+        .dark-mode .text-danger {
+            color: #ff6b6b !important;
+        }
+        
+        /* Model select dark mode styling */
+        .dark-mode .form-select {
+            background-color: #333;
+            border-color: #444;
+            color: #e9e9e9;
+        }
+        .dark-mode .form-select option {
+            background-color: #333;
+            color: #e9e9e9;
+        }
+        .dark-mode .form-select optgroup {
+            background-color: #333;
+            color: #e9e9e9;
+        }
+        /* Fix for dropdown arrow in dark mode */
+        .dark-mode .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e9e9e9' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        }
+
+        /* Better button visibility in dark mode */
+        .dark-mode .btn-outline-secondary {
+            border-color: #6c757d;
+            color: #e9e9e9;
+        }
+        .dark-mode .btn-outline-secondary i {
+            color: #e9e9e9;
+        }
+        .dark-mode .btn-outline-secondary:disabled {
+            color: #e9e9e9;
+            opacity: 0.8;
+        }
+
+        /* Tool Use History styling */
+        .tool-use-container {
+            font-family: monospace;
+            word-wrap: break-word;
+            white-space: normal;
+            font-size: 0.7em;
+            background-color: #787878;
+            border-radius: 4px;
+            padding: 4px;
+            line-height: 1;
+        }
+        
+        .dark-mode .tool-use-container {
+            background-color: #222 !important;
+            color: #e0e0e0;
+        }
+        
+        /* Tool use entries styling */
+        .tool-entry {
+            border-left: 2px solid #42a5f5;
+            padding: 0 0 0 4px;
+            margin: 2px 0;
+            font-size: 10px;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .dark-mode .tool-entry {
+            border-left-color: #42a5f5;
+        }
+        
+        .tool-timestamp {
+            font-size: 9px;
+            color: #a2a2a2;
+            margin: 0;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .dark-mode .tool-timestamp {
+            color: #c9c9c9;
+        }
+        
+        .tool-bubble {
+            border-radius: 2px;
+            padding: 2px 4px;
+            margin: 1px 0;
+        }
+
+        .tool-name {
+            color: #42a5f5;
+            font-weight: 600;
+            font-size: 9px;
+            text-transform: uppercase;
+            margin: 0;
+            padding: 0;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+        }
+        
+        .tool-name i {
+            margin-right: 3px;
+            font-size: 8px;
+        }
+        
+        .tool-input {
+            font-size: 9px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            line-height: 1;
+            color: #dcdfe4;
+            margin: 1px 0 0 0;
+            padding: 0;
+        }
+        
+        .text-primary {
+            color: #c678dd !important;
+        }
+        
+        .text-success {
+            color: #98c379 !important;
+        }
+        
+        /* Dark mode adjustments */
+        .dark-mode .tool-name {
+            color: #42a5f5;
+        }
+        
+        .dark-mode .tool-input {
+            color: #dcdfe4;
+        }
+        
+        /* Tool status badge styling */
+        .tool-status-badge {
+            margin-left: 4px;
+            font-size: 8px;
+            font-weight: normal;
+        }
+        
+        .tool-status-badge.progress {
+            color: #ffc107;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .tool-status-badge.completed {
+            color: #28a745;
+        }
+        
+        .tool-status-badge.error {
+            color: #dc3545;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Custom scrollbar for webkit browsers */
+        .chat-messages::-webkit-scrollbar,
+        #tool-use-history::-webkit-scrollbar {
+            width: 8px;
+        }
+        .chat-messages::-webkit-scrollbar-track,
+        #tool-use-history::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .chat-messages::-webkit-scrollbar-thumb,
+        #tool-use-history::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        .chat-messages::-webkit-scrollbar-thumb:hover,
+        #tool-use-history::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        .dark-mode .chat-messages::-webkit-scrollbar-track,
+        .dark-mode #tool-use-history::-webkit-scrollbar-track {
+            background: #2d2d30;
+        }
+        .dark-mode .chat-messages::-webkit-scrollbar-thumb,
+        .dark-mode #tool-use-history::-webkit-scrollbar-thumb {
+            background: #555;
+        }
+        .dark-mode .chat-messages::-webkit-scrollbar-thumb:hover,
+        .dark-mode #tool-use-history::-webkit-scrollbar-thumb:hover {
+            background: #666;
+        }
+        
+        /* Loading state styles */
+        body.loading::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(to right, #42a5f5, #0dcaf0);
+            animation: loading-bar 1.5s infinite;
+            z-index: 1000;
+        }
+        
+        @keyframes loading-bar {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Collapsible sidebar styles */
+        .toggle-sidebar-btn {
+            position: absolute;
+            right: 12px;
+            top: 20px;
+            z-index: 100;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e8f4f8;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 0;
+            font-size: 10px;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .toggle-sidebar-btn:hover {
+            background-color: #d4edda;
+            border-color: #ccc;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+
+        .dark-mode .toggle-sidebar-btn {
+            background-color: #2d2d30;
+            border-color: #444;
+            color: #e9e9e9;
+            transition: background-color 0.2s ease;
+        }
+        
+        .dark-mode .toggle-sidebar-btn:hover {
+            background-color: #3d3d40;
+            border-color: #555;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .settings-sidebar.collapsed {
+            width: 0 !important;
+            padding: 0;
+            margin-right: -15px;
+            overflow: hidden;
+        }
+
+        .settings-sidebar.collapsed .settings-content {
+            display: none;
+        }
+
+        .settings-sidebar.collapsed .settings-header {
+            display: none;
+        }
+
+        .toggle-sidebar-btn .bi-chevron-left {
+            display: none;
+        }
+
+        .settings-sidebar.collapsed + .toggle-sidebar-btn .bi-chevron-right {
+            display: none;
+        }
+
+        .settings-sidebar.collapsed + .toggle-sidebar-btn .bi-chevron-left {
+            display: inline;
+        }
+
+        /* Disable transitions temporarily during initial load */
+        .no-transition,
+        .no-transition * {
+            transition: none !important;
+            animation: none !important;
+        }
+
+        /* Dark mode toggle button */
+        .btn-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: transparent;
+            border: 1px solid #dee2e6;
+            color: #6c757d;
+            padding: 0;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-icon:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-icon i {
+            font-size: 1.1rem;
+        }
+        
+        .dark-mode .btn-icon {
+            border-color: #444;
+            color: #e9e9e9;
+        }
+        
+        .dark-mode .btn-icon:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Session History Modal Dark Mode Styles */
+        .dark-mode .modal-content {
+            background-color: #2d2d30;
+            color: #e9e9e9;
+            border-color: #444;
+        }
+        
+        .dark-mode .modal-header,
+        .dark-mode .modal-footer {
+            border-color: #444;
+        }
+        
+        .dark-mode .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+        
+        .dark-mode .btn-secondary {
+            background-color: #444;
+            border-color: #555;
+        }
+        
+        .dark-mode .btn-secondary:hover {
+            background-color: #555;
+            border-color: #666;
+        }
+        
+        .dark-mode .list-group-item {
+            background-color: #333;
+            color: #e9e9e9;
+            border-color: #444;
+        }
+        
+        .dark-mode .list-group-item a {
+            color: #42a5f5;
+        }
+        
+        .dark-mode .list-group-item a:hover {
+            color: #64b5f6;
+        }
+        
+        /* Help Modal Specific Styles */
+        .help-modal .card {
+            border: 1px solid rgba(0,0,0,.125);
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+        }
+        
+        .dark-mode .help-modal .card {
+            border-color: #444;
+            background-color: #333;
+        }
+        
+        .dark-mode .help-modal .card-body {
+            background-color: #333;
+            color: #e9e9e9;
+        }
+        
+        .dark-mode .help-modal .card-header {
+            border-bottom-color: #444;
+        }
+        
+        .dark-mode .help-modal .bg-light {
+            background-color: #444 !important;
+            color: #e9e9e9;
+        }
+        
+        .dark-mode .help-modal .alert-info {
+            background-color: rgba(66, 165, 245, 0.15);
+            border-color: rgba(66, 165, 245, 0.3);
+            color: #e9e9e9;
+        }
+        
+        .dark-mode .help-modal .accordion-item {
+            background-color: #333;
+            border-color: #444;
+        }
+        
+        .dark-mode .help-modal .accordion-button {
+            background-color: #333;
+            color: #e9e9e9;
+            border-color: #444;
+        }
+        
+        .dark-mode .help-modal .accordion-button:not(.collapsed) {
+            background-color: #444;
+            color: #e9e9e9;
+        }
+        
+        .dark-mode .help-modal .accordion-body {
+            background-color: #2d2d30;
+            color: #e9e9e9;
+            border-top-color: #444;
+        }
+        
+        /* Ensure proper contrast for badges in dark mode */
+        .dark-mode .badge {
+            color: #fff;
+        }
+        
+        /* kbd styling for keyboard shortcuts */
+        kbd {
+            background-color: #212529;
+            color: #fff;
+            padding: 0.2rem 0.4rem;
+            font-size: 0.875em;
+            border-radius: 0.25rem;
+        }
+        
+        .dark-mode kbd {
+            background-color: #495057;
+            color: #e9e9e9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Chat Area -->
+            <div class="col-md-12 chat-area" id="chat-area">
+                <div class="chat-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3><i class="bi bi-robot me-2 text-primary"></i>Agent Coding Assistant</h3>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <button id="toggle-help-btn" class="btn btn-sm btn-icon me-2" title="Help & Getting Started" data-bs-toggle="modal" data-bs-target="#helpModal">
+                            <i class="bi bi-question-circle"></i>
+                        </button>
+                        <button id="toggle-session-history-btn" class="btn btn-sm btn-icon me-2" title="Show Session History" data-bs-toggle="modal" data-bs-target="#sessionHistoryModal">
+                            <i class="bi bi-clock-history"></i>
+                        </button>
+                        <button id="toggle-dark-mode-btn" class="btn btn-sm btn-icon me-2" title="Toggle Dark Mode">
+                            <i class="bi bi-sun-fill"></i>
+                        </button>
+                        <div id="cost-indicator" class="cost-indicator">
+                            <i class="bi bi-coin"></i>
+                            <span id="total-cost">$0.000</span>
+                            <span class="text-muted ms-1"><small id="total-tokens">0 tokens</small></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                </div>
+                <div class="chat-input-area">
+                    <textarea class="form-control" placeholder="Ask me about Google Ads campaigns, strategies, optimization..." rows="1"></textarea>
+                    <button class="btn btn-primary"><i class="bi bi-send-fill"></i></button>
+                </div>
+                <small class="text-muted mt-1 d-block text-center">
+                    Press Enter to send, Shift+Enter for a new line
+                </small>
+            </div>
+
+            <!-- Settings Sidebar -->
+            <div class="col-md-3 settings-sidebar collapsed" id="settings-sidebar">
+                <div class="settings-header">
+                    <h4><i class="bi bi-gear me-2"></i> Control Center</h4>
+                </div>
+                <div class="settings-content">
+                    <div class="settings-section">
+                        <h5>Session Control</h5>
+                        <div class="d-flex align-items-center mb-3">
+                            <button id="increment-button" class="btn btn-sm btn-outline-secondary me-2" title="Increment session ID">+</button>
+                            <input type="text" id="session-id" class="form-control form-control-sm" placeholder="Session ID" onkeydown="if(event.key === 'Enter') { event.preventDefault(); initSession(); }">
+                        </div>
+                        <div class="mb-3 d-flex align-items-center">
+                            <button class="btn btn-sm btn-outline-secondary me-2" style="width: 31px; height: 31px; display: flex; align-items: center; justify-content: center;" disabled title="AI Model">
+                                <i class="bi bi-cpu-fill"></i>
+                            </button>
+                            <select id="model-select" class="form-select form-select-sm" title="Select AI Model" style="flex: 1;">
+                                <optgroup label="Complexity of the task at hand">
+                                    <option value="easy" title="no thinking required - gemini-2.5-flash-lite" selected>easy</option>
+                                    <option value="medium" title="some thinking required - gemini-2.5-flash">medium</option>
+                                    <option value="hard" title="a lot of thinking required - gemini-2.5-pro">hard</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Dark Mode toggle is now in the header -->
+                    <div class="setting-item" style="display: none;">
+                        <input class="form-check-input" type="checkbox" id="darkModeToggle">
+                        <input class="form-check-input" type="checkbox" id="showLLMToolCalls">
+                    </div>
+                    
+                    <!-- Tool Use History Section -->
+                    <div class="settings-section" id="toolUseSection" style="display: none;">
+                        <h5><i class="bi bi-tools me-2"></i> Tool Use History</h5>
+                        <div id="tool-use-history" class="tool-use-container" style="max-height: 350px; overflow-y: auto; padding: 0; border-radius: 3px; margin: 0;">
+                            <div class="text-center text-muted p-1" id="tool-history-empty" style="font-size: 11px;">
+                                <i class="bi bi-info-circle mb-1" style="font-size: 1rem;"></i>
+                                <p>No tool calls yet.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Toggle Sidebar Button -->
+            <button class="btn btn-sm toggle-sidebar-btn" id="toggle-sidebar-btn">
+                <i class="bi bi-chevron-right"></i>
+                <i class="bi bi-chevron-left"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Session History Modal -->
+    <div class="modal fade" id="sessionHistoryModal" tabindex="-1" aria-labelledby="sessionHistoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sessionHistoryModalLabel"><i class="bi bi-clock-history me-2"></i>Session History</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group" id="sessionHistoryList">
+                        <!-- Session history will be populated here by JavaScript -->
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content help-modal">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="helpModalLabel"><i class="bi bi-question-circle me-2"></i>Help & Getting Started</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <!-- Use Cases Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h4><i class="bi bi-lightbulb me-2 text-primary"></i>What can you do with Agent Coding Assistant?</h4>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card mb-3">
+                                            <div class="card-body">
+                                                <h6 class="card-title"><i class="bi bi-search me-1"></i>Campaign Strategy & Planning</h6>
+                                                <ul class="small">
+                                                    <li>Get expert advice on campaign structure and setup</li>
+                                                    <li>Learn about different campaign types and their use cases</li>
+                                                    <li>Understand bidding strategies and optimization techniques</li>
+                                                    <li>Get guidance on keyword research and targeting</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card mb-3">
+                                            <div class="card-body">
+                                                <h6 class="card-title"><i class="bi bi-graph-up me-1"></i>Performance Optimization</h6>
+                                                <ul class="small">
+                                                    <li>Analyze campaign performance and identify improvements</li>
+                                                    <li>Learn about Quality Score optimization</li>
+                                                    <li>Get recommendations for ad copy and extensions</li>
+                                                    <li>Understand conversion tracking and attribution models</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Getting Started Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h4><i class="bi bi-play-circle me-2 text-success"></i>Getting Started</h4>
+                                <div class="alert alert-info" role="alert">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <strong>Ready to use:</strong> The Agent Coding Assistant is configured and ready to answer your questions.
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6><span class="badge bg-primary me-2">1</span>Choose Your Session</h6>
+                                        <ol class="small">
+                                            <li>Each conversation is tied to a unique Session ID</li>
+                                            <li>You can create a new session or continue an existing one</li>
+                                            <li>Use the <strong>+</strong> button to increment to a new session</li>
+                                            <li>Previous sessions can be accessed via the history button</li>
+                                        </ol>
+                                        
+                                        <h6><span class="badge bg-primary me-2">2</span>Select AI Complexity</h6>
+                                        <ol class="small">
+                                            <li><strong>Easy:</strong> Quick answers to simple Google Ads questions</li>
+                                            <li><strong>Medium:</strong> Detailed analysis and strategic recommendations</li>
+                                            <li><strong>Hard:</strong> Complex problem-solving and multi-faceted strategies</li>
+                                        </ol>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6><span class="badge bg-primary me-2">3</span>Start Asking Questions</h6>
+                                        <div class="bg-light p-3 rounded small">
+                                            <strong>Example queries to try:</strong>
+                                            <ul class="mb-0">
+                                                <li>"How do I set up a Performance Max campaign?"</li>
+                                                <li>"What's the best bidding strategy for e-commerce?"</li>
+                                                <li>"How can I improve my Quality Score?"</li>
+                                                <li>"Explain different Google Ads campaign types"</li>
+                                                <li>"What are responsive search ads best practices?"</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- UI Description Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h4><i class="bi bi-display me-2 text-warning"></i>User Interface Guide</h4>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card mb-3">
+                                            <div class="card-header bg-warning text-dark">
+                                                <h6 class="mb-0"><i class="bi bi-lightbulb me-1"></i>Pro Tips</h6>
+                                            </div>
+                                            <div class="card-body small">
+                                                <ul class="mb-0">
+                                                    <li>Be specific in your questions for better results</li>
+                                                    <li>Ask follow-up questions to dive deeper into topics</li>
+                                                    <li>Use the tool history to see what sources are being used</li>
+                                                    <li>Each session preserves context for related questions</li>
+                                                    <li>Higher complexity models provide more detailed analysis</li>
+                                                    <li>The assistant can explain both basic and advanced concepts</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="card mb-3">
+                                            <div class="card-header bg-info text-white">
+                                                <h6 class="mb-0"><i class="bi bi-tools me-1"></i>Interface Features</h6>
+                                            </div>
+                                            <div class="card-body small">
+                                                <ul class="mb-0">
+                                                    <li><strong>Tool Use History:</strong> See what knowledge sources are accessed</li>
+                                                    <li><strong>Cost Indicator:</strong> Track tokens used and estimated costs</li>
+                                                    <li><i class="bi bi-question-circle me-1"></i> <strong>Help:</strong> Opens this help dialog</li>
+                                                    <li><i class="bi bi-clock-history me-1"></i> <strong>History:</strong> View and switch between sessions</li>
+                                                    <li><i class="bi bi-sun-fill me-1"></i>/<i class="bi bi-moon-fill me-1"></i> <strong>Theme:</strong> Toggle dark/light mode</li>
+                                                    <li><i class="bi bi-gear me-1"></i> <strong>Settings:</strong> Show/hide the Control Center panel</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Include self-hosted Bootstrap JS -->
+    <script src="/static/external/bootstrap-5.3.6-dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Include Showdown for markdown conversion -->
+    <script src="/static/external/showdown.min.js"></script>
+    
+    <!-- Include Socket.IO client -->
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    
+    <!-- Include our custom JS -->
+    <script src="/js/app.js?v=2"></script>
+    
+    <script>
+        // Add event delegation for tool entry expansion
+        document.getElementById('tool-use-history').addEventListener('click', function(event) {
+            let target = event.target;
+            while (target && !target.classList.contains('tool-entry')) {
+                if (target === this) return;
+                target = target.parentElement;
+            }
+            
+            if (target) {
+                target.classList.toggle('expanded');
+            }
+        });
+    </script>
+</body>
+</html>
