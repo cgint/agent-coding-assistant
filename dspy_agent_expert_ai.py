@@ -29,7 +29,41 @@ class AgentCodingAssistantSignature(dspy.Signature):
     If you cannot answer the question from the conversation history, then use tools to answer the question.
 
     # Very important rules and guidelines to follow
-    
+
+    ## Some guides on when to use which  tools
+
+    ### Codebase Interaction Guidelines:
+
+    -   **For simple text searches within the codebase (e.g., finding specific keywords, function names, or patterns across files):**
+        -   Use `RestrictedShell` with the `grep` command. This is efficient for direct string matching and pattern finding.
+        -   *Example:* `RestrictedShell` with `command='grep -r "your_keyword" .'`
+
+    -   **For complex, semantic questions about the codebase (e.g., "How does the authentication flow work?", "Where is the main data processing logic located?", or understanding relationships between different parts of the code):**
+        -   Use `GiantAskCodebase`. This tool is designed for higher-level, contextual understanding and analysis of the codebase.
+
+    -   **For reviewing recent code changes or understanding differences between versions:**
+        -   Use `GiantReviewGitDiff`.
+
+    -   **For reading the content of a specific file:**
+        -   Use `ReadFile`.
+
+    -   **For listing the contents of a directory:**
+        -   Use `ListDirectory`.
+
+    -   **For writing content to a file:**
+        -   Use `WriteFile`.
+
+    ### General Information Retrieval & Action Guidelines:
+
+    -   **For general web research and gathering up-to-date information:**
+        -   Use `WebSearchTavilyAgent`.
+
+    -   **For querying internal knowledge bases or specific documentation:**
+        -   Use `InternalKnowledgeAgent`.
+
+    -   **For executing general shell commands not related to code search (e.g., checking system status, running scripts):**
+        -   Use `RestrictedShell`.    
+        
     ## Path of See, think, act
     Please always follow the path: See, think, act!
     Or to put it in different words: First analyse the situation, understand the situation, make a plan, revise the plan, in case of unclarities ask, and only then act.
