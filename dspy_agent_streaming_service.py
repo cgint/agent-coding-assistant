@@ -5,13 +5,15 @@ import asyncio
 from typing import Tuple, Callable, Optional, AsyncGenerator, Dict, Any
 
 import dspy
+import dspy.streaming
 from datetime import datetime
 
 from dspy_agent_lm_vertexai import get_vertexai_lm
 from dspy_agent_util_streaming_grounding_manager import StreamingGroundingManager
 from dspy_agent_tool_streaming_internal_knowledge import StreamingInternalKnowledgeTool
 from dspy_agent_tool_streaming_websearch_tavily import StreamingWebSearchToolTavily
-from dspy_agent_tool_lc_filesystem import LangChainReadFileTool, LangChainListDirectoryTool
+from dspy_agent_tool_cgiant import GiantAskCodebaseTool, GiantReviewGitDiffTool
+from dspy_agent_tool_lc_filesystem import LangChainReadFileTool, LangChainListDirectoryTool, LangChainWriteFileTool
 from dspy_agent_tool_restricted_shell import RestrictedShellTool
 from dspy_agent_expert_ai import AgentCodingAssistantAI
 from dspy_constants import MODEL_NAME_GEMINI_2_5_FLASH, MODEL_NAME_GEMINI_2_5_PRO, MODEL_NAME_GEMINI_2_5_FLASH_LITE, MODEL_NAME_GEMINI_2_0_FLASH
@@ -59,19 +61,28 @@ class StreamingDspyAgentService:
         list_directory_tool = LangChainListDirectoryTool(
             grounding_manager=self.grounding_manager,
         )
-        
-        # Create restricted shell tool for command execution
-        shell_tool = RestrictedShellTool(
+        write_file_tool = LangChainWriteFileTool(
             grounding_manager=self.grounding_manager,
         )
         
+        # Create restricted shell tool for command execution
+        restricted_shell_tool = RestrictedShellTool(
+            grounding_manager=self.grounding_manager,
+        )
+
+        giant_ask_codebase_tool = GiantAskCodebaseTool(self.grounding_manager)  # type: ignore[no-untyped-call]
+        giant_review_git_diff_tool = GiantReviewGitDiffTool(self.grounding_manager)  # type: ignore[no-untyped-call]
+
         # Build list of tools for easy iteration
         tools: list[dspy.Tool] = [
             internal_tool,
             web_search_tool,
             read_file_tool,
             list_directory_tool,
-            shell_tool
+            write_file_tool,
+            restricted_shell_tool,
+            giant_ask_codebase_tool,
+            giant_review_git_diff_tool
         ]
 
         # Attach per-request DSPy callbacks to tools to emit progress via DSPy's native hook system
@@ -83,12 +94,12 @@ class StreamingDspyAgentService:
             )
             
             # Instance-level callbacks are honored by DSPy in addition to global callbacks
-            try:
-                for tool in tools:
+            for tool in tools:
+                current_tool_name = tool.name if hasattr(tool, "name") else tool.__class__.__name__
+                try:
                     tool.callbacks = getattr(tool, "callbacks", []) + [tool_callback]  # type: ignore[attr-defined]
-            except Exception:
-                # If attaching callbacks fails for any reason, continue without breaking
-                pass
+                except Exception as e:
+                    print(f"Error attaching callbacks to tool {current_tool_name}: {e}")
 
         # Initialize the main agent with streaming tools
         self.expert_ai = AgentCodingAssistantAI(tools=tools)
@@ -134,7 +145,9 @@ class StreamingDspyAgentService:
                         self._merge_usage_entries(current, v)
                     elif isinstance(v, (int, float)) or v is None:
                         try:
-                            result[k] = (current or 0) + (v or 0)
+                            # Ensure 'current' is a number before adding
+                            current_val = current if isinstance(current, (int, float)) else 0
+                            result[k] = (current_val or 0) + (v or 0)
                         except TypeError:
                             result[k] = v or 0
                     else:
@@ -548,10 +561,3 @@ class _ToolProgressCallback(BaseCallback):
 
 def _get_timestamp_str() -> str:
     return datetime.now().isoformat()
-
-
-# Backward compatibility: create a factory function that returns the original service
-def create_standard_service() -> Any:
-    """Create a standard non-streaming service for backward compatibility."""
-    from dspy_agent_service import DspyAgentService
-    return DspyAgentService()

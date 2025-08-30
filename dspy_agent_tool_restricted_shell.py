@@ -6,7 +6,6 @@ This module provides safe command-line execution with allowlisted commands for c
 import subprocess
 import logging
 import dspy
-from typing import Dict
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -95,7 +94,9 @@ The shell tool only allows commands that start with specific prefixes:
 
 class RestrictedShellTool(dspy.Tool):
     """A dspy.Tool that executes allowlisted shell commands safely."""
-    
+
+    model_config = {"extra": "allow"}
+
     def __init__(self, grounding_manager=None):
         """
         Initialize the RestrictedShellTool.
