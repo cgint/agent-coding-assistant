@@ -35,8 +35,10 @@ class AgentCodingAssistantSignature(dspy.Signature):
     ### Codebase Interaction Guidelines:
 
     -   **For simple text searches within the codebase (e.g., finding specific keywords, function names, or patterns across files):**
-        -   Use `RestrictedShell` with the `grep` command. This is efficient for direct string matching and pattern finding.
-        -   *Example:* `RestrictedShell` with `command='grep -r "your_keyword" .'`
+        -   Use `CodeTermSearch` which efficiently searches both tracked and untracked files while respecting .gitignore.
+        -   *Example:* `CodeTermSearch` with `term="your_keyword"`
+        -   *For specific file types:* `CodeTermSearch` with `term="your_keyword", file_types=["py", "md"]`
+        -   *With limited results:* `CodeTermSearch` with `term="your_keyword", max_results=20`
 
     -   **For complex, semantic questions about the codebase (e.g., "How does the authentication flow work?", "Where is the main data processing logic located?", or understanding relationships between different parts of the code):**
         -   Use `GiantAskCodebase`. This tool is designed for higher-level, contextual understanding and analysis of the codebase.
@@ -105,10 +107,15 @@ class AgentCodingAssistantSignature(dspy.Signature):
     #    - Find files when user mentions directories or file patterns
     #    - Examples: "What files are in src/", "Show me the project structure"
     
-    # 5. **RestrictedShell** - Execute safe commands (git, uv, pytest, ls, grep, etc.)
+    # 5. **RestrictedShell** - Execute safe commands (git, uv, pytest, ls, etc.)
     #    - Use for development tasks: version control, testing, package management
-    #    - Examples: "git status", "uv run pytest", "ls -la", "grep -r pattern ."
+    #    - Examples: "git status", "uv run pytest", "ls -la"
     #    - IMPORTANT: Only safe, allowlisted commands are permitted
+    
+    # 6. **CodeTermSearch** - Search for terms/patterns in the codebase
+    #    - Efficiently searches both tracked and untracked files while respecting .gitignore
+    #    - Examples: "CodeTermSearch" with term="Assistant", "CodeTermSearch" with term="import", file_types=["py"]
+    #    - Use this instead of grep for code searches
 
     # ## TOOL USAGE STRATEGY:
     # - **For coding questions**: Start by exploring with ListDirectory and ReadFile to understand the codebase

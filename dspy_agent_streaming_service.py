@@ -15,6 +15,7 @@ from dspy_agent_tool_streaming_websearch_tavily import StreamingWebSearchToolTav
 from dspy_agent_tool_cgiant import GiantAskCodebaseTool, GiantReviewGitDiffTool
 from dspy_agent_tool_lc_filesystem import LangChainReadFileTool, LangChainListDirectoryTool, LangChainWriteFileTool
 from dspy_agent_tool_restricted_shell import RestrictedShellTool
+from dspy_agent_tool_code_term_search import CodeTermSearchTool
 from dspy_agent_expert_ai import AgentCodingAssistantAI
 from dspy_constants import MODEL_NAME_GEMINI_2_5_FLASH, MODEL_NAME_GEMINI_2_5_PRO, MODEL_NAME_GEMINI_2_5_FLASH_LITE, MODEL_NAME_GEMINI_2_0_FLASH
 from session_history_manager import SessionHistoryManager
@@ -69,6 +70,11 @@ class StreamingDspyAgentService:
         restricted_shell_tool = RestrictedShellTool(
             grounding_manager=self.grounding_manager,
         )
+        
+        # Create code search tool for efficient term searching
+        code_term_search_tool = CodeTermSearchTool(
+            grounding_manager=self.grounding_manager,
+        )
 
         giant_ask_codebase_tool = GiantAskCodebaseTool(self.grounding_manager)  # type: ignore[no-untyped-call]
         giant_review_git_diff_tool = GiantReviewGitDiffTool(self.grounding_manager)  # type: ignore[no-untyped-call]
@@ -81,6 +87,7 @@ class StreamingDspyAgentService:
             list_directory_tool,
             write_file_tool,
             restricted_shell_tool,
+            code_term_search_tool,
             giant_ask_codebase_tool,
             giant_review_git_diff_tool
         ]
