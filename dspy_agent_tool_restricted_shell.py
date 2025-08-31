@@ -97,14 +97,15 @@ class RestrictedShellTool(dspy.Tool):
 
     model_config = {"extra": "allow"}
 
-    def __init__(self, grounding_manager=None):
+    def __init__(self, grounding_manager=None, max_output_chars: int = 50000):
         """
         Initialize the RestrictedShellTool.
         
         Args:
             grounding_manager: Optional grounding manager for tracking tool usage
+            max_output_chars: Maximum number of characters to return from command output (default: 50000)
         """
-        # Store grounding manager in closure to avoid Pydantic restrictions
+        # Store grounding manager and max_output_chars in closure to avoid Pydantic restrictions
         def execute_shell_command(command: str) -> str:
             """
             Execute a shell command if it's in the allowlist.
@@ -151,6 +152,14 @@ class RestrictedShellTool(dspy.Tool):
                     output_parts.append(f"Exit code: {result.returncode}")
                 
                 output = "\n".join(output_parts) if output_parts else "Command completed successfully (no output)"
+                
+                # SAFETY: Truncate massive outputs to prevent context overflow
+                if len(output) > max_output_chars:
+                    original_length = len(output)
+                    truncated_output = output[:max_output_chars]
+                    lines_count = output.count('\n')
+                    truncated_lines = truncated_output.count('\n') 
+                    output = f"{truncated_output}\n\n[OUTPUT TRUNCATED: {original_length:,} total chars, {lines_count:,} total lines, showing first {truncated_lines:,} lines]"
                 
                 # Add source information to grounding
                 if grounding_manager:
