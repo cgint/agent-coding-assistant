@@ -176,5 +176,6 @@ if __name__ == "__main__":
         host="127.0.0.1",
         port=9191,
         reload=True,
+        reload_includes=["*.py"],
         log_level="info"
     )
