@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple test client for the Google Ads Expert AI WebSocket API.
+Simple test client for the Agent Coding Assistant WebSocket API.
 Tests the Socket.IO integration and streaming functionality.
 """
 

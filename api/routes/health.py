@@ -12,7 +12,7 @@ async def health_check() -> dict[str, str]:
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "service": "Google Ads Expert AI",
+        "service": "Agent Coding Assistant",
         "version": "0.1.0"
     }
 
@@ -26,7 +26,7 @@ async def detailed_health_check() -> dict[str, Any]:
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "service": "Google Ads Expert AI",
+        "service": "Agent Coding Assistant",
         "version": "0.1.0",
         "system": {
             "cpu_percent": psutil.cpu_percent(),

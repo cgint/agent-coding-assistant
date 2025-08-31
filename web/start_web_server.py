@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Start script for the Google Ads Expert AI web interface.
+Start script for the Agent Coding Assistant web interface.
 This runs both the FastAPI backend and serves the web interface.
 """
 
@@ -32,7 +32,7 @@ def check_environment() -> bool:
 
 def main() -> None:
     """Start the web server."""
-    print("🚀 Starting Google Ads Expert AI Web Interface")
+    print("🚀 Starting Agent Coding Assistant Web Interface")
     print("=" * 50)
     
     # Check environment

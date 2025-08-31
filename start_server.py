@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple server startup script for the Google Ads Expert AI API.
+Simple server startup script for the Agent Coding Assistant API.
 """
 
 import uvicorn
@@ -33,7 +33,7 @@ def check_environment() -> bool:
 
 def main() -> None:
     """Start the server."""
-    print("🚀 Starting Google Ads Expert AI API Server")
+    print("🚀 Starting Agent Coding Assistant API Server")
     print("=" * 50)
     
     # Check environment

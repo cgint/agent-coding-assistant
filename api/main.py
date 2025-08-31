@@ -18,7 +18,7 @@ mlflow.autolog()
 
 # Create FastAPI application
 app = FastAPI(
-    title="Google Ads Expert AI API",
+    title="Agent Coding Assistant API",
     description="Streaming AI agent for Google Ads expertise using DSPy",
     version="0.1.0",
     docs_url="/docs",

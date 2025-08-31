@@ -1,1 +1,1 @@
-# API package for Google Ads Expert AI
+# API package for Agent Coding Assistant

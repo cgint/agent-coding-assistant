@@ -146,7 +146,7 @@ class AgentWebSocketManager:
             
             # Send welcome message
             await self.sio.emit('connection_confirmed', {
-                'message': 'Connected to Google Ads Expert AI',
+                'message': 'Connected to Agent Coding Assistant',
                 'session_id': sid,
                 'capabilities': [
                     'real_time_streaming',

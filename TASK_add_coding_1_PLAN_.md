@@ -1,7 +1,7 @@
 # Plan: Evolving the Agent into a Coding Assistant
 
 ## 1. Objective
-The primary goal is to extend the existing `dspy-ai` based "Google Ads Expert AI" into a fully-fledged Coding Assistant. This evolution will enable the agent to interact directly with the development environment, including reading/writing files, executing tests, and running terminal commands, thereby allowing it to autonomously perform coding tasks.
+The primary goal is to extend the existing `dspy-ai` based "Agent Coding Assistant" into a fully-fledged Coding Assistant. This evolution will enable the agent to interact directly with the development environment, including reading/writing files, executing tests, and running terminal commands, thereby allowing it to autonomously perform coding tasks.
 
 ## 2. Current Architecture Summary
 The application is built on a robust and modern stack:

@@ -1,4 +1,4 @@
-# Google Ads Expert AI
+# Agent Coding Assistant
 
 This project is a **streaming AI agent** for Google Ads expertise, built using **DSPy + FastAPI + Socket.IO**. It provides real-time streaming responses with tool transparency and grounding information.
 
