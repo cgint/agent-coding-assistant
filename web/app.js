@@ -302,32 +302,11 @@ function displaySessionHistory(history) {
     return;
   }
   
-  // Display each conversation pair
+  // Collect all tools from all conversations for global sorting by newest first
+  const allTools = [];
   history.forEach((entry, index) => {
-    // Display user question
-    renderUserMessage(entry.question);
-    
-    // Display bot answer with token/model info if available
-    let normalized = null;
-    if (entry.usage_metadata) {
-      normalized = parseUsageMetadata(entry.usage_metadata);
-    }
-    renderBotMessage(entry.answer, null, normalized ? normalized.model : null, normalized || null);
-    
-    // Display persisted tool calls, if any
     if (entry.tools && Array.isArray(entry.tools) && entry.tools.length > 0) {
-      // Ensure section visible
-      const toolUseSection = document.getElementById('toolUseSection');
-      if (toolUseSection) toolUseSection.style.display = 'block';
-      // Sort by ended_at if present, otherwise by started_at (descending so oldest ends up at bottom)
-      const sortedTools = [...entry.tools].sort((a, b) => {
-        const aTimeStr = (a.ended_at && typeof a.ended_at === 'string') ? a.ended_at : a.started_at;
-        const bTimeStr = (b.ended_at && typeof b.ended_at === 'string') ? b.ended_at : b.started_at;
-        const ta = aTimeStr ? new Date(aTimeStr).getTime() : 0;
-        const tb = bTimeStr ? new Date(bTimeStr).getTime() : 0;
-        return tb - ta;
-      });
-      sortedTools.forEach((tool) => {
+      entry.tools.forEach((tool) => {
         const toolName = tool.name || 'tool';
         let text = '';
         if (tool.status === 'error' && tool.error) {
@@ -340,15 +319,52 @@ function displaySessionHistory(history) {
         }
         // Prefer ended_at for completed/error, otherwise started_at
         const ts = tool.ended_at || tool.started_at || null;
-        addToolUseEntry(toolName, text, tool.status || 'started', ts, true);
+        allTools.push({
+          toolName,
+          text,
+          status: tool.status || 'started',
+          timestamp: ts
+        });
       });
     }
-    
+  });
+
+  // Sort all tools globally by newest first (descending timestamp order)
+  allTools.sort((a, b) => {
+    const ta = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const tb = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return tb - ta; // Newest first
+  });
+
+  // Display each conversation pair
+  history.forEach((entry, index) => {
+    // Display user question
+    renderUserMessage(entry.question);
+
+    // Display bot answer with token/model info if available
+    let normalized = null;
+    if (entry.usage_metadata) {
+      normalized = parseUsageMetadata(entry.usage_metadata);
+    }
+    renderBotMessage(entry.answer, null, normalized ? normalized.model : null, normalized || null);
+
     // Update cost information if available
     if (entry.usage_metadata) {
       updateCostFromUsageMetadata(entry.usage_metadata);
     }
   });
+
+  // Add all tools to history in globally sorted order (newest first)
+  if (allTools.length > 0) {
+    // Ensure section visible
+    const toolUseSection = document.getElementById('toolUseSection');
+    if (toolUseSection) toolUseSection.style.display = 'block';
+
+    // Add tools in sorted order (newest first)
+    allTools.forEach((toolData) => {
+      addToolUseEntry(toolData.toolName, toolData.text, toolData.status, toolData.timestamp, true);
+    });
+  }
   
   // Scroll to bottom
   chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -399,11 +415,15 @@ function addToolUseEntry(toolName, input, status = 'started', timestamp = null, 
     </div>
   `.trim();
   
-  // For history load, append to preserve chronological order; otherwise prepend
-  if (isHistoryLoad) {
-    toolUseHistory.appendChild(toolEntry);
-  } else {
+  // Always insert in chronological order (newest first)
+  // For live updates, prepend to maintain newest-first order
+  // For history loading, append since tools are already sorted globally by newest first
+  if (!isHistoryLoad) {
+    // Live update: prepend to top (newest)
     toolUseHistory.insertBefore(toolEntry, toolUseHistory.firstChild);
+  } else {
+    // History loading: append since tools are pre-sorted by newest first
+    toolUseHistory.appendChild(toolEntry);
   }
   
   // Limit to last 20 entries for live updates only
