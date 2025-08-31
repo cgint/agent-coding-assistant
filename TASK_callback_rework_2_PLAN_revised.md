@@ -34,3 +34,16 @@ In summary, the plan thoroughly identifies a callback attachment problem, traces
 ## DSPy Global Callback System
 
 To use DSPy's global callback system, you can configure it by setting the callback to the DSPy settings. This will apply the callback to the program execution. For example, you can use `dspy.configure(callbacks=[AgentLoggingCallback()])`. DSPy's callback mechanism, which includes the `BaseCallback` class, supports custom logging solutions and provides handlers like `on_module_start`/`on_module_end` (triggered when a `dspy.Module` subclass is invoked) and `on_lm_start`/`on_lm_end` (triggered when a `dspy.LM` subclass is invoked).
+
+
+### Files to Adapt for DSPy Global Callback System
+
+To transition from using `model_config = {"extra": "allow"}` on individual tools to a DSPy Global Callback System, the following files would need to be adapted:
+
+*   `dspy_agent_tool_restricted_shell.py`: This file defines the `RestrictedShellTool`. The `model_config = {"extra": "allow"}` line would need to be removed.
+*   `dspy_agent_tool_lc_filesystem.py`: This file likely defines `ReadFileTool` and `ListDirectoryTool`. The `model_config = {"extra": "allow"}` lines within these tool definitions would need to be removed.
+*   `dspy_agent_tool_cgiant.py`: This file likely defines `GiantAskCodebaseTool` and `GiantReviewGitDiffTool`. The `model_config = {"extra": "allow"}` lines within these tool definitions would need to be removed.
+*   `dspy_agent_tool_streaming_internal_knowledge.py`: This file defines `StreamingInternalKnowledgeTool`. The `model_config = {"extra": "allow"}` line would need to be removed.
+*   `dspy_agent_tool_streaming_websearch_tavily.py`: This file defines `StreamingWebSearchToolTavily`. The `model_config = {"extra": "allow"}` line would need to be removed.
+
+In essence, the change involves removing the `model_config = {"extra": "allow"}` declaration from each of these tool classes. The global callback system would then handle the necessary attribute allowance or callback registration without requiring this explicit Pydantic configuration on each tool.
