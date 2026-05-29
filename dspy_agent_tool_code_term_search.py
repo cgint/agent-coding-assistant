@@ -24,6 +24,8 @@ class CodeTermSearchTool(dspy.Tool):
     - Preventing context overflow with output limits
     - Providing clean, manageable results
     """
+
+    model_config = {"extra": "allow"}
     
     def __init__(self, grounding_manager=None, default_max_results: int = 50, max_output_chars: int = 25000):
         """

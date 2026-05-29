@@ -22,6 +22,7 @@ from session_history_manager import SessionHistoryManager
 from dspy.utils.callback import BaseCallback
 from session_models import ToolCallRecord
 from dspy_pricing_service import PricingService, SingleModelPricingService
+from dspy_agent_tool_gemini import GeminiAskTool
 
 
 class StreamingDspyAgentService:
@@ -78,6 +79,7 @@ class StreamingDspyAgentService:
 
         giant_ask_codebase_tool = GiantAskCodebaseTool(self.grounding_manager)  # type: ignore[no-untyped-call]
         giant_review_git_diff_tool = GiantReviewGitDiffTool(self.grounding_manager)  # type: ignore[no-untyped-call]
+        gemini_ask_tool = GeminiAskTool(self.grounding_manager)  # type: ignore[no-untyped-call]
 
         # Build list of tools for easy iteration
         tools: list[dspy.Tool] = [
@@ -89,11 +91,13 @@ class StreamingDspyAgentService:
             restricted_shell_tool,
             code_term_search_tool,
             giant_ask_codebase_tool,
-            giant_review_git_diff_tool
+            giant_review_git_diff_tool,
+            gemini_ask_tool,
         ]
 
         # Attach per-request DSPy callbacks to tools to emit progress via DSPy's native hook system
         if self.threadsafe_event_callback or self.event_callback:
+            print("Attaching callbacks to tools ...")
             tool_callback = _ToolProgressCallback(
                 event_callback=self.event_callback,
                 threadsafe_event_callback=self.threadsafe_event_callback,
@@ -105,6 +109,7 @@ class StreamingDspyAgentService:
                 current_tool_name = tool.name if hasattr(tool, "name") else tool.__class__.__name__
                 try:
                     tool.callbacks = getattr(tool, "callbacks", []) + [tool_callback]  # type: ignore[attr-defined]
+                    print(f"Attached callbacks to tool {current_tool_name}")
                 except Exception as e:
                     print(f"Error attaching callbacks to tool {current_tool_name}: {e}")
 

@@ -139,7 +139,7 @@ class LangChainWriteFileTool(dspy.Tool):
                         domain='local'
                     )
 
-                success_msg = f"Successfully {'appended to' if append else 'wrote to'} file: {file_path}"
+                success_msg = f"{'appended to' if append else 'wrote to'} file: {file_path} - returned result: {result}"
                 print(f"✅ {success_msg}")
                 return success_msg
 
